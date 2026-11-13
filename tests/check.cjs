@@ -43,7 +43,7 @@ close(results[8].data['0'] + results[8].data['1'], 1, 1e-12);
 const fs = require('node:fs');
 const rates = [0.8, 1.0, 1.2];
 const example = fs.readFileSync(path.join(__dirname, '../examples/playground.flatppl'), 'utf8')
-  .replace(/https:\/\/raw\.githubusercontent\.com\/BJMCox\/flatppl-numerics-ode\/[^/]+\/main\.flatppl/, '../main.flatppl')
+  .replace(/https:\/\/raw\.githubusercontent\.com\/flatppl-community\/flatppl-numerics-ode\/[^/]+\/main\.flatppl/, '../main.flatppl')
   + '\n' + rates.map((rate, i) => `example_score${i}=logdensityof(Pi_post, record(rate=${rate}))`).join('\n');
 const scores = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {
   input: JSON.stringify({ source: example, bindings: rates.map((_, i) => `example_score${i}`) }),

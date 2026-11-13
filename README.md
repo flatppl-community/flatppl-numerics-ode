@@ -15,7 +15,7 @@ Choose the grid: these solvers do not adapt the step size. See the
 [reference](docs/reference.md) for method choices, stiff-solver convergence,
 and numerical limits.
 
-The [decay example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2FBJMCox%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
+The [decay example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2Fflatppl-community%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
 infers a decay rate from noisy measurements. Its library import is pinned to a
 specific commit. To run the JavaScript checks with Node 24 or newer:
 
