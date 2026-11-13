@@ -1,0 +1,6 @@
+flatppl_compat = "0.1"
+ode = load_module("../main.flatppl")
+rate = elementof(reals)
+inputs = rate
+rhs(t, y, p) = p .* y
+outputs = ode.euler(rhs, [1.0], [0.0, 0.1, 0.2], rate)
