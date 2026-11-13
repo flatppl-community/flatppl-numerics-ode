@@ -11,7 +11,7 @@ rate ~ LogNormal(0, 0.5)
 rhs = (t, y, p) -> -p .* y
 states = ode.vern7(rhs, [1.0], times_data, rate)
 response ~ Normal.(rowstack(states)[:, 1], 0.05)
-prior = lawof(rate)
+prior = lawof(record(rate = rate))
 forward = kernelof(response, rate = rate)
 L = likelihoodof(forward, y_data)
 Pi_post = bayesupdate(L, prior)
