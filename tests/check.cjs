@@ -42,7 +42,7 @@ close(results[8].data['0'] + results[8].data['1'], 1, 1e-12);
 // The example's posterior score is compared with the exponential solution and
 // independent normal and log-normal density formulas at rate = 1.
 const fs = require('node:fs');
-const example = fs.readFileSync(path.join(__dirname, '../examples/decay.flatppl'), 'utf8')
+const example = fs.readFileSync(path.join(__dirname, '../examples/playground.flatppl'), 'utf8')
   .replace(/https:\/\/raw\.githubusercontent\.com\/BJMCox\/flatppl-numerics-ode\/[^/]+\/main\.flatppl/, '../main.flatppl')
   + '\nexample_score=logdensityof(Pi_post, record(rate=1.0))';
 const [score] = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {

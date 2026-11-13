@@ -1,0 +1,6 @@
+flatppl_compat="0.1"
+ode=load_module("../main.flatppl")
+rate=elementof(reals)
+inputs=rate
+rhs(t, y, p) = [p * (y[2] - y[1]^2), p * (y[1]^2 - y[2])]
+outputs=ode.sdirk2(rhs,[0.9,0.1],[0.0,0.01,0.02],rate)
