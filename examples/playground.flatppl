@@ -5,12 +5,15 @@ Three noisy measurements constrain the decay rate of a population starting at on
 %%%
 flatppl_compat = "0.1"
 ode = load_module("https://raw.githubusercontent.com/BJMCox/flatppl-numerics-ode/d65ec800f933be924521c50e85dc0798e8bbdc85/main.flatppl")
-times_data = [0.0, 0.5, 1.0]
+times_data = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 y_data = [1.02, 0.57, 0.38]
 rate ~ LogNormal(0, 0.5)
 rhs = (t, y, p) -> -p .* y
 states = ode.vern7(rhs, [1.0], times_data, rate)
-response ~ Normal.(rowstack(states)[:, 1], 0.05)
+# The three observations are at grid indices 1, 6, and 11.
+state_matrix = rowstack(states)
+means = [state_matrix[1, 1], state_matrix[6, 1], state_matrix[11, 1]]
+response ~ Normal.(means, 0.05)
 prior = lawof(record(rate = rate))
 forward = kernelof(response, rate = rate)
 L = likelihoodof(forward, y_data)

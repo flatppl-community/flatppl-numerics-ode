@@ -39,19 +39,22 @@ const ratio = (0.9 - upper) / (0.9 - lower) * Math.exp(-0.5 * Math.sqrt(5));
 close(results[8].data['0'], (upper - ratio * lower) / (1 - ratio), 0.01);
 close(results[8].data['0'] + results[8].data['1'], 1, 1e-12);
 
-// The example's posterior score is compared with the exponential solution and
-// independent normal and log-normal density formulas at rate = 1.
+// Compare the posterior with closed-form exponential trajectories and densities.
 const fs = require('node:fs');
+const rates = [0.8, 1.0, 1.2];
 const example = fs.readFileSync(path.join(__dirname, '../examples/playground.flatppl'), 'utf8')
   .replace(/https:\/\/raw\.githubusercontent\.com\/BJMCox\/flatppl-numerics-ode\/[^/]+\/main\.flatppl/, '../main.flatppl')
-  + '\nexample_score=logdensityof(Pi_post, record(rate=1.0))';
-const [score] = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {
-  input: JSON.stringify({ source: example, bindings: ['example_score'] }), encoding: 'utf8', env: process.env,
+  + '\n' + rates.map((rate, i) => `example_score${i}=logdensityof(Pi_post, record(rate=${rate}))`).join('\n');
+const scores = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {
+  input: JSON.stringify({ source: example, bindings: rates.map((_, i) => `example_score${i}`) }),
+  encoding: 'utf8', env: process.env,
 }));
 const observed = [1.02, 0.57, 0.38];
 const times = [0, 0.5, 1];
-const lognormalPrior = -Math.log(0.5) - 0.5 * Math.log(2 * Math.PI);
-const expectedScore = observed.reduce((sum, y, i) =>
-  sum - 0.5 * ((y - Math.exp(-times[i])) / 0.05) ** 2 - Math.log(0.05) - 0.5 * Math.log(2 * Math.PI), lognormalPrior);
-close(score, expectedScore, 1e-7);
+rates.forEach((rate, j) => {
+  const prior = -0.5 * (Math.log(rate) / 0.5) ** 2 - Math.log(rate * 0.5) - 0.5 * Math.log(2 * Math.PI);
+  const expected = observed.reduce((sum, y, i) =>
+    sum - 0.5 * ((y - Math.exp(-rate * times[i])) / 0.05) ** 2 - Math.log(0.05) - 0.5 * Math.log(2 * Math.PI), prior);
+  close(scores[j], expected, 1e-11);
+});
 console.log('ODE checks passed');
