@@ -1,5 +1,7 @@
 # flatppl-numerics-ode
 
+[Function reference](docs/reference.md)
+
 Fixed-grid ordinary differential equation solvers for FlatPPL 0.1. The RHS has
 the signature `f(t, y, p)`, returns a vector, and receives parameters explicitly.
 

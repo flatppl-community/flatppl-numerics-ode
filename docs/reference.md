@@ -1,5 +1,7 @@
 # ODE reference
 
+Library version **0.1** · [Package overview](../README.md)
+
 Every solver takes a deterministic RHS `f(t, y, p)`, a real vector `initial`, a
 strictly monotone real vector `times` of at least two entries, and a value `p`
 passed to `f` unchanged. The RHS returns a real vector matching the state. A
