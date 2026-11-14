@@ -1,9 +1,8 @@
 # flatppl-numerics-ode
 
-[Function reference](docs/reference.md)
+[Function reference](docs/reference.md) · [Live example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2Fflatppl-community%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
 
-Fixed-grid ordinary differential equation solvers for FlatPPL 0.1. The RHS has
-the signature `f(t, y, p)`, returns a vector, and receives parameters explicitly.
+Fixed-grid ordinary differential equation solvers for FlatPPL. Library version **0.1**.
 
 ```flatppl
 flatppl_compat = "0.1"
@@ -12,16 +11,8 @@ rate(t, y, p) = -p .* y
 trajectory = ode.rk4(rate, [1.0], [0.0, 0.1, 0.2], 2.0)
 ```
 
-The result contains one state per input time, including the initial state.
-Choose the grid: these solvers do not adapt the step size. See the
-[reference](docs/reference.md) for method choices, stiff-solver convergence,
-and numerical limits.
+The right-hand side `f(t, y, p)` returns a vector and receives parameters explicitly. Results include the initial state. The caller supplies the time grid. Step sizes do not adapt.
 
-The [decay example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2Fflatppl-community%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
-infers a decay rate from noisy measurements. Its library import is pinned to a
-specific commit. To run the JavaScript checks with Node 24 or newer:
+The [decay example](examples/playground.flatppl) infers a rate from noisy measurements.
 
-```sh
-FLATPPL_JS_DIR=/path/to/flatppl-js node tests/check.cjs
-FLATPPL_JS_DIR=/path/to/flatppl-js node tests/orders.cjs
-```
+See the reference for definitions, domains, numerical limits, and validation commands.
