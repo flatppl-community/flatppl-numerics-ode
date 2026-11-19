@@ -13,4 +13,6 @@ trajectory = ode.rk4(rate, [1.0], [0.0, 0.1, 0.2], 2.0)
 
 Solvers integrate $dy/dt=f(t,y,p)$. For a state of length $d$ and a time grid of length $N$, the result has shape $N\times d$, including the initial state. The RHS returns a length-$d$ vector. The time grid is strictly monotone; step sizes do not adapt.
 
+The stiff solvers accept [analytic derivative functions](docs/reference.md#analytic-derivatives) for $\partial f/\partial y$ and, in Rosenbrock23, $\partial f/\partial t$.
+
 The [decay example](examples/playground.flatppl) infers a rate from noisy measurements.

@@ -15,11 +15,24 @@ rosen = ode.rosenbrock23_step(linear, 0.0, [1.0], 0.1, -1000.0)
 sdirk = ode.sdirk2_step(linear, 0.0, [1.0], 0.1, -1000.0)
 nonlinear_step = ode.sdirk2_step(nonlinear, 0.0, [1.5], 0.01, 50.0)
 residual = ode.sdirk2_residual(nonlinear, 0.0, [1.5], 0.01, 50.0, nonlinear_step)
-coupled_step = ode.sdirk2_step(coupled, 0.0, [0.9, 0.1], 0.01, 50.0)`;
-const zeroStepSource = source + '\nzero_step = ode.rosenbrock23_step(linear, 0.0, [1.0, 2.0, 3.0], 0.0, -1000.0)';
-const bindings = ['euler', 'heun', 'rk4', 'vern7', 'rosen', 'sdirk', 'nonlinear_step', 'residual', 'coupled_step', 'zero_step'];
+coupled_step = ode.sdirk2_step(coupled, 0.0, [0.9, 0.1], 0.01, 50.0)
+zero_step = ode.rosenbrock23_step(linear, 0.0, [1.0, 2.0, 3.0], 0.0, -1000.0)
+affine(t, y, p) = [p * y[1] + t, y[1] - 2.0 * y[2] + 2.0 * t]
+affine_jac(t, y, p) = rowstack([[p, 0.0], [1.0, -2.0]])
+affine_dt(t, y, p) = [1.0, 2.0]
+initial = [0.9, 0.1]
+times = [0.2, 0.3, 0.48]
+rosen_path = ode.rosenbrock23(affine, initial, times, -1.3)
+rosen_analytic_path = ode.rosenbrock23_analytic(affine, affine_jac, affine_dt, initial, times, -1.3)
+coupled_jac(t, y, p) = rowstack([[-2.0 * p * y[1], p], [2.0 * p * y[1], -p]])
+sdirk_analytic_path = ode.sdirk2_analytic(coupled, coupled_jac, initial, [0.0, 0.01], 50.0)
+sdirk_analytic_residual = ode.sdirk2_analytic_residual(coupled, coupled_jac, 0.0, initial, 0.01, 50.0, sdirk_analytic_path[2])`;
+const bindings = [
+  'euler', 'heun', 'rk4', 'vern7', 'rosen', 'sdirk', 'nonlinear_step', 'residual', 'coupled_step', 'zero_step',
+  'rosen_path', 'rosen_analytic_path', 'sdirk_analytic_path', 'sdirk_analytic_residual',
+];
 const results = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {
-  input: JSON.stringify({ source: zeroStepSource, bindings }), encoding: 'utf8', env: process.env,
+  input: JSON.stringify({ source, bindings }), encoding: 'utf8', env: process.env,
 }));
 const scalar = value => value.data['0'];
 assert.deepEqual(Object.values(results[9].data), [1, 2, 3]);
@@ -40,6 +53,16 @@ const lower = -(Math.sqrt(5) + 1) / 2;
 const ratio = (0.9 - upper) / (0.9 - lower) * Math.exp(-0.5 * Math.sqrt(5));
 close(results[8].data['0'], (upper - ratio * lower) / (1 - ratio), 0.01);
 close(results[8].data['0'] + results[8].data['1'], 1, 1e-12);
+
+// Forward differences are exact in real arithmetic for the affine RHS.
+const [rosenPath, rosenAnalyticPath, sdirkAnalyticPath, analyticResidual] = results.slice(10);
+assert.equal(rosenAnalyticPath.length, rosenPath.length);
+rosenAnalyticPath.forEach((state, i) => Object.values(state.data).forEach((value, j) =>
+  close(value, rosenPath[i].data[j], 1e-12)));
+Object.values(sdirkAnalyticPath[1].data).forEach((value, j) => close(value, results[8].data[j], 1e-12));
+for (const stage of Object.values(analyticResidual)) {
+  Object.values(stage.data).forEach(value => close(value, 0, 1e-12));
+}
 
 // Compare the posterior with closed-form exponential trajectories and densities.
 const fs = require('node:fs');

@@ -23,9 +23,9 @@ a start time, and a step size, and returns the next state vector.
 These are fixed-grid methods, with no adaptive step selection, error estimate,
 events, or interpolation. Refine the grid to assess integration accuracy.
 Nominal orders need not hold on a coarse grid, near floating-point limits, or
-in stiff order-reduction regimes. The stiff methods target modest vector sizes: their
-dense Jacobians cost one RHS evaluation per component and their dense solves
-scale cubically in state dimension.
+in stiff order-reduction regimes. The stiff methods target modest vector sizes.
+Finite differences use one extra RHS evaluation per state component. Dense
+linear solves scale cubically in the state dimension.
 
 ## Euler
 
@@ -77,9 +77,9 @@ $g=1-1/\sqrt{2}$ the equations are
 $$Y_1=y+hg f(t+hg,Y_1,p),$$
 $$Y_2=y+h(1-g)f(t+hg,Y_1,p)+hg f(t+h,Y_2,p),\qquad y_{n+1}=Y_2.$$
 
-Each stage runs eight Newton iterations from the stage's base state, with a
-recomputed finite-difference Jacobian. A fixed budget does not guarantee
-convergence or choose among multiple roots; inspect the stage residuals below.
+Each stage runs eight Newton iterations from the stage's base state and
+recomputes the Jacobian at each iterate. Use the stage residuals below to
+check convergence.
 
 ## `sdirk2_residual`
 
@@ -90,16 +90,41 @@ uses `result` as the second stage. Compare each component with the scale and
 accuracy required by the problem. Small residuals do not prove the time grid is
 accurate; repeat on a finer grid.
 
+## Analytic derivatives
+
+For a state of length $d$, supply `jac(t, y, p)` as a real $d\times d$ matrix
+with entry $J_{ij}=\partial f_i/\partial y_j$.
+For Rosenbrock23, also supply `dfdt(t, y, p)` as the length-$d$ vector
+$\partial f/\partial t$ at fixed state and parameters. For autonomous
+systems, use `dfdt(t, y, p) = 0.0 .* y`.
+
+| Trajectory | Single step |
+|---|---|
+| `rosenbrock23_analytic(f, jac, dfdt, initial, times, p)` | `rosenbrock23_analytic_step(f, jac, dfdt, t, y, h, p)` |
+| `sdirk2_analytic(f, jac, initial, times, p)` | `sdirk2_analytic_step(f, jac, t, y, h, p)` |
+
+Rosenbrock23 evaluates both derivatives at the start of each step. SDIRK2
+evaluates `jac` at each Newton iterate. All functions receive the same `p`.
+Use `sdirk2_analytic_residual(f, jac, t, y, h, p, result)` to check the
+residuals of an analytic SDIRK2 step.
+
+```flatppl
+f(t, y, k) = [-k * y[1] + t, k * y[1] - y[2]]
+jac(t, y, k) = rowstack([[-k, 0.0], [k, -1.0]])
+dfdt(t, y, k) = [1.0, 0.0]
+trajectory = ode.rosenbrock23_analytic(f, jac, dfdt, [1.0, 0.0], [0.0, 0.1, 0.2], 2.0)
+```
+
 ## Finite differences and limits
 
-For state component $j$, both stiff methods approximate the Jacobian using
+The default stiff solvers approximate the Jacobian using
 $d_j=0.0001\max(1,|y_j|)$ and
 $J_{:,j}=[f(t,y+d_j e_j,p)-f(t,y,p)]/d_j$. Rosenbrock23 approximates the time
 derivative analogously using $d_t=0.0001\max(1,|t|)$. These defaults trade
 roundoff and truncation error and do not guarantee accuracy at every scale or
 precision. Check sensitivity to grid and floating-point precision. The RHS must
-be defined at perturbed and intermediate stage points; restricted-domain
-systems may need a reformulation. Singular matrices follow the engine's
+be defined at intermediate stage points and at any finite-difference
+perturbations. Singular matrices follow the engine's
 `linsolve` error behavior. No state or gradient is clamped.
 
 ## Examples and validation
