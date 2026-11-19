@@ -17,6 +17,8 @@ The stiff solvers accept [analytic derivative functions](docs/reference.md#analy
 
 Vern7 and Rodas4P2 offer [embedded error estimates](docs/reference.md#embedded-error-estimates) for checking a fixed grid.
 
-The [decay example](examples/playground.flatppl) infers a rate from noisy measurements.
+The [decay example](examples/playground.flatppl) infers a rate from noisy measurements. The
+[grid-refinement examples](docs/grid-refinement.md) compare log densities and gradients
+for decay and coupled stiff inference.
 
 [Third-party notices](THIRD-PARTY-NOTICES.md)

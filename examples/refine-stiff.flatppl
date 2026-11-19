@@ -1,0 +1,51 @@
+%%%
+# Refine the grid for coupled stiff ODE inference
+
+The first state decays at unit rate. The second relaxes toward the first at
+rate k in (64, 96). Observations of the second state constrain k through an
+unconstrained parameter. Compare three Rodas4P2 grids with the exact flow.
+%%%
+flatppl_compat = "0.1"
+ode = load_module("../main.flatppl")
+observation_times = [0.025, 0.05, 0.1, 0.2]
+observed = [0.855, 0.938, 0.919, 0.822]
+sigma = 0.015
+times_coarse = linspace(0.0, 0.2, 17)
+times_medium = linspace(0.0, 0.2, 33)
+times_fine = linspace(0.0, 0.2, 65)
+rate = theta -> 64.0 + 32.0 * invlogit(theta)
+rhs = (t, y, k) -> [-y[1], k * (y[1] - y[2])]
+jac = (t, y, k) -> rowstack([[-1.0, 0.0], [k, -k]])
+dfdt = (t, y, k) -> 0.0 .* y
+trajectory = (theta, times) -> ode.rodas4p2_with_error(rhs, jac, dfdt, [1.0, 0.0], times, rate(theta))
+means = (theta, times, rows) -> rowstack(ode.rodas4p2(rhs, jac, dfdt, [1.0, 0.0], times, rate(theta)))[rows, 2]
+exact_means = k -> k / (k - 1.0) .* (exp.(-1.0 .* observation_times) .- exp.(-k .* observation_times))
+theta ~ Normal(0.0, 1.0)
+observations_coarse ~ Normal.(means(theta, times_coarse, [3, 5, 9, 17]), sigma)
+observations_medium ~ Normal.(means(theta, times_medium, [5, 9, 17, 33]), sigma)
+observations_fine ~ Normal.(means(theta, times_fine, [9, 17, 33, 65]), sigma)
+observations_exact ~ Normal.(exact_means(rate(theta)), sigma)
+prior = lawof(record(theta = theta))
+Pi_coarse = bayesupdate(likelihoodof(kernelof(observations_coarse, theta = theta), observed), prior)
+Pi_medium = bayesupdate(likelihoodof(kernelof(observations_medium, theta = theta), observed), prior)
+Pi_post = bayesupdate(likelihoodof(kernelof(observations_fine, theta = theta), observed), prior)
+Pi_exact = bayesupdate(likelihoodof(kernelof(observations_exact, theta = theta), observed), prior)
+probe = elementof(reals)
+point = record(theta = probe)
+score_coarse = logdensityof(Pi_coarse, point)
+score_medium = logdensityof(Pi_medium, point)
+score_fine = logdensityof(Pi_post, point)
+score_exact = logdensityof(Pi_exact, point)
+coarse_errors = rowstack(trajectory(probe, times_coarse).error)
+medium_errors = rowstack(trajectory(probe, times_medium).error)
+fine_errors = rowstack(trajectory(probe, times_fine).error)
+inputs = probe
+outputs = (
+  score_coarse,
+  score_medium,
+  score_fine,
+  score_exact,
+  coarse_errors,
+  medium_errors,
+  fine_errors,
+)
