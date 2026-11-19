@@ -3,12 +3,15 @@
 
 Integrate dy/dt = f(t, y, p), with a length-d vector state and explicit parameters p.
 A strictly monotone length-N time grid gives an N-by-d trajectory, including the
-initial state. Single-step functions return a length-d vector. Steps do not adapt.
+initial state. Specialized solvers cover affine flows and second-order mechanics.
 %%%
 flatppl_compat = "0.1"
 explicit = load_module("src/explicit.flatppl")
 stiff = load_module("src/stiff.flatppl")
 grid = load_module("src/solve.flatppl")
+verlet = load_module("src/verlet.flatppl")
+affine_flow = load_module("src/affine.flatppl")
+rodas = load_module("src/rodas4p2.flatppl")
 euler_step = explicit.euler_step
 heun_step = explicit.heun_step
 rk4_step = explicit.rk4_step
@@ -29,3 +32,9 @@ _rosenbrock23_step = (f, t, y, h, args) -> rosenbrock23_analytic_step(f, args[1]
 _sdirk2_step = (f, t, y, h, args) -> sdirk2_analytic_step(f, args[1], t, y, h, args[2])
 rosenbrock23_analytic = (f, jac, dfdt, initial, times, p) -> grid.solve(_rosenbrock23_step, f, initial, times, (jac, dfdt, p))
 sdirk2_analytic = (f, jac, initial, times, p) -> grid.solve(_sdirk2_step, f, initial, times, (jac, p))
+velocity_verlet_step = verlet.velocity_verlet_step
+velocity_verlet = verlet.velocity_verlet
+affine_step = affine_flow.affine_step
+affine = affine_flow.affine
+rodas4p2_step = rodas.rodas4p2_step
+rodas4p2 = (f, jac, dfdt, initial, times, p) -> grid.solve(rodas.rodas4p2_grid_step, f, initial, times, (jac, dfdt, p))
