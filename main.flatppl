@@ -1,4 +1,10 @@
-% # Fixed-step ordinary differential equations
+%%%
+# Fixed-grid ordinary differential equations
+
+Integrate dy/dt = f(t, y, p), with a length-d vector state and explicit parameters p.
+A strictly monotone length-N time grid gives an N-by-d trajectory, including the
+initial state. Single-step functions return a length-d vector. Steps do not adapt.
+%%%
 flatppl_compat = "0.1"
 explicit = load_module("src/explicit.flatppl")
 stiff = load_module("src/stiff.flatppl")

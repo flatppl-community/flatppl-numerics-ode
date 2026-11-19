@@ -16,11 +16,13 @@ sdirk = ode.sdirk2_step(linear, 0.0, [1.0], 0.1, -1000.0)
 nonlinear_step = ode.sdirk2_step(nonlinear, 0.0, [1.5], 0.01, 50.0)
 residual = ode.sdirk2_residual(nonlinear, 0.0, [1.5], 0.01, 50.0, nonlinear_step)
 coupled_step = ode.sdirk2_step(coupled, 0.0, [0.9, 0.1], 0.01, 50.0)`;
-const bindings = ['euler', 'heun', 'rk4', 'vern7', 'rosen', 'sdirk', 'nonlinear_step', 'residual', 'coupled_step'];
+const zeroStepSource = source + '\nzero_step = ode.rosenbrock23_step(linear, 0.0, [1.0, 2.0, 3.0], 0.0, -1000.0)';
+const bindings = ['euler', 'heun', 'rk4', 'vern7', 'rosen', 'sdirk', 'nonlinear_step', 'residual', 'coupled_step', 'zero_step'];
 const results = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'evaluate.cjs')], {
-  input: JSON.stringify({ source, bindings }), encoding: 'utf8', env: process.env,
+  input: JSON.stringify({ source: zeroStepSource, bindings }), encoding: 'utf8', env: process.env,
 }));
 const scalar = value => value.data['0'];
+assert.deepEqual(Object.values(results[9].data), [1, 2, 3]);
 const close = (a, b, tol) => assert.ok(Math.abs(a - b) < tol, `${a} vs ${b}`);
 close(results[0][2].data['0'], 0.81, 1e-12);
 const exact = 2 * Math.exp(-0.1) + 0.1 - 1;
