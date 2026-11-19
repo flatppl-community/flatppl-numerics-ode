@@ -9,7 +9,7 @@ gradient. Use the embedded errors to locate intervals that need attention.
   are $0$, $0.5$, and $1$. The Vern7 step sizes are $0.5$, $0.25$, and $0.125$.
 - [Coupled stiff decay](../examples/refine-stiff.flatppl) uses $x'=-x$ and
   $y'=k(x-y)$ from $(x_0,y_0)=(1,0)$. The model infers
-  $\theta\sim\mathcal N(0,1)$ with $k=64+32\,\operatorname{invlogit}(\theta)$.
+  $\theta\sim\mathcal N(0,1)$ with $`k=64+32\,\operatorname{invlogit}(\theta)`$.
   Synthetic observations measure $y$ at $0.025$, $0.05$, $0.1$, and $0.2$.
   The Rodas4P2 step sizes are $0.0125$, $0.00625$, and $0.003125$.
 
