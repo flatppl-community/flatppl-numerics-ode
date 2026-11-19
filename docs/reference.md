@@ -10,21 +10,20 @@ each consecutive time interval as a step, including unequal or negative steps.
 Each `*_step(f, t, y, h, p)` takes the same RHS and parameters, a state vector,
 a start time, and a step size, and returns the next state vector.
 
-| Solver | Single step | Intended role | Order |
-|---|---|---|---:|
-| [`euler`](#euler) | [`euler_step`](#euler) | Quick | 1 |
-| [`heun`](#heun) | [`heun_step`](#heun) | Quick with correction | 2 |
-| [`rk4`](#rk4) | [`rk4_step`](#rk4) | General-purpose smooth | 4 |
-| [`vern7`](#vern7) | [`vern7_step`](#vern7) | Precise smooth | 7 |
-| [`rosenbrock23`](#rosenbrock23) | [`rosenbrock23_step`](#rosenbrock23) | Quick stiff | 2 |
-| [`sdirk2`](#sdirk2) | [`sdirk2_step`](#sdirk2) | General-purpose stiff | 2 |
-| [`sdirk2_residual`](#sdirk2_residual) | — | Check implicit stage residuals | — |
+| Solver | Single step | Order |
+|---|---|---:|
+| [`euler`](#euler) | [`euler_step`](#euler) | 1 |
+| [`heun`](#heun) | [`heun_step`](#heun) | 2 |
+| [`rk4`](#rk4) | [`rk4_step`](#rk4) | 4 |
+| [`vern7`](#vern7) | [`vern7_step`](#vern7) | 7 |
+| [`rosenbrock23`](#rosenbrock23) | [`rosenbrock23_step`](#rosenbrock23) | 2 |
+| [`sdirk2`](#sdirk2) | [`sdirk2_step`](#sdirk2) | 2 |
+| [`sdirk2_residual`](#sdirk2_residual) | — | — |
 
 These are fixed-grid methods, with no adaptive step selection, error estimate,
 events, or interpolation. Refine the grid to assess integration accuracy.
 Nominal orders need not hold on a coarse grid, near floating-point limits, or
-in stiff order-reduction regimes. The role labels describe use cases, not
-performance guarantees. The stiff methods target modest vector sizes: their
+in stiff order-reduction regimes. The stiff methods target modest vector sizes: their
 dense Jacobians cost one RHS evaluation per component and their dense solves
 scale cubically in state dimension.
 
@@ -104,11 +103,6 @@ systems may need a reformulation. Singular matrices follow the engine's
 `linsolve` error behavior. No state or gradient is clamped.
 
 ## Examples and validation
-
-The result contains one state per input time, including the initial state.
-Choose the grid: these solvers do not adapt the step size. See the
-[reference](reference.md) for method choices, stiff-solver convergence,
-and numerical limits.
 
 The [decay example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2Fflatppl-community%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
 infers a decay rate from noisy measurements. Its library import is pinned to a

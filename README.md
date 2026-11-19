@@ -11,8 +11,6 @@ rate(t, y, p) = -p .* y
 trajectory = ode.rk4(rate, [1.0], [0.0, 0.1, 0.2], 2.0)
 ```
 
-The right-hand side `f(t, y, p)` returns a vector and receives parameters explicitly. Results include the initial state. The caller supplies the time grid. Step sizes do not adapt.
+Solvers integrate $dy/dt=f(t,y,p)$. For a state of length $d$ and a time grid of length $N$, the result has shape $N\times d$, including the initial state. The RHS returns a length-$d$ vector. The time grid is strictly monotone; step sizes do not adapt.
 
 The [decay example](examples/playground.flatppl) infers a rate from noisy measurements.
-
-See the reference for definitions, domains, numerical limits, and validation commands.

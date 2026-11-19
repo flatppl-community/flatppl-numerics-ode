@@ -7,7 +7,7 @@ refine the time grid for your problem.
 %%%
 flatppl_compat = "0.1"
 fd_increment(y) = 0.0001 .* max.(1.0, abs.(y))
-fd_column(unused, i, args) = (args[1](args[2], args[3] .+ args[4][i] .* eye(lengthof(args[3]))[:, i], args[5]) .- args[6]) ./ args[4][i]
+fd_column(unused, i, args) = (args[1](args[2], args[3] .+ args[4][i] .* ifelse.(indicesof(args[3]) .== i, 1.0, 0.0), args[5]) .- args[6]) ./ args[4][i]
 jacobian(f, t, y, p) = jacobian_from_base(f, t, y, p, f(t, y, p), fd_increment(y))
 jacobian_from_base(f, t, y, p, origin, increments) = transpose(rowstack(scan(fd_column, y .* 0.0, indicesof(y), (f, t, y, increments, p, origin))))
 time_derivative(f, t, y, p) = (f(t + 0.0001 * max(1.0, abs(t)), y, p) .- f(t, y, p)) ./ (0.0001 * max(1.0, abs(t)))
