@@ -11,7 +11,7 @@ rate(t, y, p) = -p .* y
 trajectory = ode.rk4(rate, [1.0], [0.0, 0.1, 0.2], 2.0)
 ```
 
-Solvers integrate $dy/dt=f(t,y,p)$. For a state of length $d$ and a time grid of length $N$, the result has shape $N\times d$, including the initial state. The RHS returns a length-$d$ vector. The time grid is strictly monotone; step sizes do not adapt.
+Solvers integrate $dy/dt=f(t,y,p)$. For a state of length $d$ and a time grid of length $N$, the result has shape $N\times d$, including the initial state. The RHS returns a vector of length $d$. The time grid is strictly monotone; step sizes do not adapt.
 
 The stiff solvers accept [analytic derivative functions](docs/reference.md#analytic-derivatives). Rodas4P2 gives fourth-order stiff integration. The [affine solver](docs/reference.md#exact-affine-flow) propagates $y'=Ay+b$ by matrix exponential. [Velocity Verlet](docs/reference.md#velocity-verlet) handles separable mechanical systems.
 

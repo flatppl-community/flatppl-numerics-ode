@@ -96,8 +96,8 @@ accurate; repeat on a finer grid.
 
 For a state of length $d$, supply `jac(t, y, p)` as a real $d\times d$ matrix
 with entry $J_{ij}=\partial f_i/\partial y_j$.
-For Rosenbrock23 and Rodas4P2, also supply `dfdt(t, y, p)` as the length-$d$ vector
-$\partial f/\partial t$ at fixed state and parameters. For autonomous
+For Rosenbrock23 and Rodas4P2, supply `dfdt(t, y, p)` as a vector of length $d$
+containing $\partial f/\partial t$ at fixed state and parameters. For autonomous
 systems, use `dfdt(t, y, p) = 0.0 .* y`.
 
 | Trajectory | Single step |
@@ -162,8 +162,10 @@ log density, and parameter gradients.
 For $y'=Ay+b$ with constant $A\in\mathbb R^{d\times d}$ and $b\in\mathbb R^d$,
 `affine_step(A, b, y, h)` computes the first $d$ components of
 
-$$\exp\!\left(h\begin{bmatrix}A & b \\ 0 & 0\end{bmatrix}\right)
-\begin{bmatrix}y \\ 1\end{bmatrix}.$$
+```math
+\exp\!\left(h\begin{bmatrix}A & b \\ 0 & 0\end{bmatrix}\right)
+\begin{bmatrix}y \\ 1\end{bmatrix}.
+```
 
 This formula also applies to singular $A$. `affine(A, b, initial, h, steps)`
 computes one transition for the uniform grid and reuses it across steps. Row
