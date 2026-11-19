@@ -1,0 +1,56 @@
+%%%
+# Rodas4P2
+
+Six-stage fourth-order Rosenbrock method with analytic jac(t,y,p) and dfdt(t,y,p).
+The same matrix I - h*J/4 is used for all stages. No adaptive error controller.
+Coefficients and stage convention: SciML/OrdinaryDiffEq.jl, MIT,
+ee14b61c0e78cc6cbb732989b14e765df20b105f,
+lib/OrdinaryDiffEqRosenbrockTableaus/src/rosenbrock_tableaus.jl, Rodas4P2Tableau;
+lib/OrdinaryDiffEqRosenbrock/src/rosenbrock_perform_step.jl.
+See THIRD-PARTY-NOTICES.md for the upstream license.
+%%%
+flatppl_compat = "0.1"
+
+rodas4p2_grid_step(f, t, y, h, args) = rodas4p2_step(f, args[1], args[2], t, y, h, args[3])
+rodas4p2_step(f, jac, dfdt, t, y, h, p) = _rodas4p2_first(
+    f, t, y, h, p, eye(lengthof(y)) .- (h / 4) .* jac(t, y, p), (h * h / 4) .* dfdt(t, y, p)
+)
+_rodas4p2_first(f, t, y, h, p, M, dt) = _rodas4p2_second(
+    f, t, y, h, p, M, dt, linsolve(M, (h / 4) .* f(t, y, p) .+ 0.25 .* dt)
+)
+_rodas4p2_second(f, t, y, h, p, M, dt, k1) = _rodas4p2_third(
+    f, t, y, h, p, M, dt, k1,
+    linsolve(M, (h / 4) .* f(t + 0.75 * h, y .+ 3 .* k1, p) .- 0.5 .* dt .- 3 .* k1)
+)
+_rodas4p2_third(f, t, y, h, p, M, dt, k1, k2) = _rodas4p2_fourth(
+    f, t, y, h, p, M, dt, k1, k2,
+    linsolve(M, (h / 4) .* f(t + 0.321448134013046 * h,
+        y .+ 0.906377755268814 .* k1 .- 0.189707390391685 .* k2, p)
+        .- 0.189532918363016 .* dt .+ (-6.354581592719008 / 4) .* k1 .+ (0.338972550544623 / 4) .* k2)
+)
+_rodas4p2_fourth(f, t, y, h, p, M, dt, k1, k2, k3) = _rodas4p2_fifth(
+    f, t, y, h, p, M, k1, k2, k3,
+    linsolve(M, (h / 4) .* f(t + 0.519745732277726 * h,
+        y .+ 3.758617027739064 .* k1 .+ 1.161741776019525 .* k2 .- 0.849258085312803 .* k3, p)
+        .+ 0.085612108792769 .* dt .+ (-8.575016317114033 / 4) .* k1
+        .+ (-7.606483992117508 / 4) .* k2 .+ (12.22499765012482 / 4) .* k3)
+)
+_rodas4p2_fifth(f, t, y, h, p, M, k1, k2, k3, k4) = _rodas4p2_fifth_state(
+    f, t, h, p, M, k1, k2, k3, k4,
+    y .+ 7.089566927282776 .* k1 .+ 4.573591406461604 .* k2
+        .- 8.423496976860259 .* k3 .- 0.959280113459775 .* k4
+)
+_rodas4p2_fifth_state(f, t, h, p, M, k1, k2, k3, k4, origin) = _rodas4p2_sixth(
+    f, t, h, p, M, k1, k2, k3, k4, origin,
+    linsolve(M, (h / 4) .* f(t + h, origin, p) .+ (-5.888975457523102 / 4) .* k1
+        .+ (-8.157396617841821 / 4) .* k2 .+ (24.805546872612922 / 4) .* k3
+        .+ (12.790401512796979 / 4) .* k4)
+)
+_rodas4p2_sixth(f, t, h, p, M, k1, k2, k3, k4, origin, k5) = _rodas4p2_finish(
+    f, t, h, p, M, k1, k2, k3, k4, k5, origin .+ k5
+)
+_rodas4p2_finish(f, t, h, p, M, k1, k2, k3, k4, k5, stage) = stage .+ linsolve(
+    M, (h / 4) .* f(t + h, stage, p) .+ (-4.408651676063871 / 4) .* k1
+        .+ (-6.692003137674639 / 4) .* k2 .+ (24.625568527593117 / 4) .* k3
+        .+ (16.627521966636085 / 4) .* k4 .+ (-5.714285714285718 / 4) .* k5
+)

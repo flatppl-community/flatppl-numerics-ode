@@ -2,12 +2,12 @@
 
 Library version **0.1** · [Package overview](../README.md)
 
-Every solver takes a deterministic RHS `f(t, y, p)`, a real vector `initial`, a
+General-purpose solvers take a deterministic RHS `f(t, y, p)`, a real vector `initial`, a
 strictly monotone real vector `times` of at least two entries, and a value `p`
 passed to `f` unchanged. The RHS returns a real vector matching the state. A
 solver returns one vector per time, including `initial` at `times[1]`. It uses
 each consecutive time interval as a step, including unequal or negative steps.
-Each `*_step(f, t, y, h, p)` takes the same RHS and parameters, a state vector,
+The basic `*_step(f, t, y, h, p)` functions take the same RHS and parameters, a state vector,
 a start time, and a step size, and returns the next state vector.
 
 | Solver | Single step | Order |
@@ -18,6 +18,9 @@ a start time, and a step size, and returns the next state vector.
 | [`vern7`](#vern7) | [`vern7_step`](#vern7) | 7 |
 | [`rosenbrock23`](#rosenbrock23) | [`rosenbrock23_step`](#rosenbrock23) | 2 |
 | [`sdirk2`](#sdirk2) | [`sdirk2_step`](#sdirk2) | 2 |
+| [`rodas4p2`](#rodas4p2) | [`rodas4p2_step`](#rodas4p2) | 4 |
+| [`velocity_verlet`](#velocity-verlet) | [`velocity_verlet_step`](#velocity-verlet) | 2 |
+| [`affine`](#exact-affine-flow) | [`affine_step`](#exact-affine-flow) | Exact flow |
 | [`sdirk2_residual`](#sdirk2_residual) | — | — |
 
 These are fixed-grid methods, with no adaptive step selection, error estimate,
@@ -94,7 +97,7 @@ accurate; repeat on a finer grid.
 
 For a state of length $d$, supply `jac(t, y, p)` as a real $d\times d$ matrix
 with entry $J_{ij}=\partial f_i/\partial y_j$.
-For Rosenbrock23, also supply `dfdt(t, y, p)` as the length-$d$ vector
+For Rosenbrock23 and Rodas4P2, also supply `dfdt(t, y, p)` as the length-$d$ vector
 $\partial f/\partial t$ at fixed state and parameters. For autonomous
 systems, use `dfdt(t, y, p) = 0.0 .* y`.
 
@@ -127,13 +130,58 @@ be defined at intermediate stage points and at any finite-difference
 perturbations. Singular matrices follow the engine's
 `linsolve` error behavior. No state or gradient is clamped.
 
+## Rodas4P2
+
+`rodas4p2(f, jac, dfdt, initial, times, p)` and
+`rodas4p2_step(f, jac, dfdt, t, y, h, p)` use the fourth-order
+L-stable [Rodas4P2 method](https://docs.sciml.ai/OrdinaryDiffEq/dev/massmatrixdae/Rosenbrock/).
+The six stages share $I-h\gamma J$, with $\gamma=1/4$ and $J=\partial f/\partial y$
+evaluated at the start of the step. Supply the [analytic derivative functions](#analytic-derivatives).
+See the [coefficient table](https://github.com/SciML/OrdinaryDiffEq.jl/blob/ee14b61c0e78cc6cbb732989b14e765df20b105f/lib/OrdinaryDiffEqRosenbrockTableaus/src/rosenbrock_tableaus.jl).
+
+## Exact affine flow
+
+For $y'=Ay+b$ with constant $A\in\mathbb R^{d\times d}$ and $b\in\mathbb R^d$,
+`affine_step(A, b, y, h)` computes the first $d$ components of
+
+$$\exp\!\left(h\begin{bmatrix}A & b \\ 0 & 0\end{bmatrix}\right)
+\begin{bmatrix}y \\ 1\end{bmatrix}.$$
+
+This formula also applies to singular $A$. `affine(A, b, initial, h, steps)`
+computes one transition for the uniform grid and reuses it across steps. Row
+$i$ gives the state after $(i-1)h$, including the initial state in row one.
+The finite step size $h$ may be negative or zero. The step count is a
+nonnegative integer fixed before compilation.
+
+```flatppl
+A = rowstack([[-2.0, 0.0], [2.0, 0.0]])
+states = ode.affine(A, [0.0, 0.1], [1.0, 0.0], 0.25, 8)
+```
+
+## Velocity Verlet
+
+For $q'=v$, $v'=a(t,q,p)$, `velocity_verlet_step(acceleration, t, q, v, h, p)` computes
+
+$$v_{1/2}=v+\tfrac h2 a(t,q,p),\qquad q_1=q+h v_{1/2},
+\qquad v_1=v_{1/2}+\tfrac h2 a(t+h,q_1,p).$$
+
+The position $q$, velocity $v$, and acceleration $a$ are real vectors of the
+same length. The step returns `position` and `velocity` fields.
+`velocity_verlet(acceleration, q0, v0, times, p)` returns the position and velocity
+trajectories on a strictly monotone grid of at least two times. Each field
+includes its initial vector. The trajectory reuses acceleration between
+steps. The method is second order and symplectic for separable Hamiltonian
+dynamics.
+
 ## Examples and validation
 
 The [decay example](https://live.flatppl.org/#model=https%3A%2F%2Fraw.githubusercontent.com%2Fflatppl-community%2Fflatppl-numerics-ode%2Fmain%2Fexamples%2Fplayground.flatppl&target=Pi_post)
 infers a decay rate from noisy measurements. Its library import is pinned to a
-specific commit. To run the JavaScript checks with Node 24 or newer:
+specific commit. Run the JavaScript checks with Node 24 or newer.
 
 ```sh
-FLATPPL_JS_DIR=/path/to/flatppl-js node tests/check.cjs
-FLATPPL_JS_DIR=/path/to/flatppl-js node tests/orders.cjs
+export FLATPPL_JS_DIR=/path/to/flatppl-js
+for test in check orders affine rodas4p2 verlet; do
+    node "tests/$test.cjs" || exit
+done
 ```

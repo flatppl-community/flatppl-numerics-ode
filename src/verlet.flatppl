@@ -1,0 +1,47 @@
+%%%
+# Velocity Verlet
+
+Integrate dq/dt = v and dv/dt = acceleration(t, q, p), with matching real
+position and velocity vectors. The acceleration must not depend on velocity.
+The supplied time grid is strictly monotone and has at least two entries.
+%%%
+flatppl_compat = "0.1"
+
+_finish(t, q, v, h, a0, a1) = record(
+    t = t,
+    position = q,
+    velocity = v .+ (h / 2) .* (a0 .+ a1),
+    acceleration = a1
+)
+_drift(acceleration, next_time, q, v, h, p, a0) = (
+    _finish(next_time, q, v, h, a0, acceleration(next_time, q, p))
+)
+_step(acceleration, next_time, q, v, h, p, a0) = (
+    _drift(acceleration, next_time, q .+ h .* v .+ (h ^ 2 / 2) .* a0, v, h, p, a0)
+)
+_result(state) = record(position = state.position, velocity = state.velocity)
+
+% One step returns matching position and velocity vectors.
+velocity_verlet_step(acceleration, t, q, v, h, p) = (
+    _result(_step(acceleration, t + h, q, v, h, p, acceleration(t, q, p)))
+)
+
+_advance(state, next_time, args) = (
+    _step(args[1], next_time, state.position, state.velocity, next_time - state.t,
+        args[2], state.acceleration)
+)
+_remaining_times(times) = times[1 .+ indicesof(zeros(lengthof(times) - 1))]
+_trajectory(q0, v0, states) = record(
+    position = cat([q0], states.position),
+    velocity = cat([v0], states.velocity)
+)
+_solve(acceleration, q0, v0, times, p, a0) = (
+    _trajectory(q0, v0, scan(_advance,
+        record(t = times[1], position = q0, velocity = v0, acceleration = a0),
+        _remaining_times(times), (acceleration, p)))
+)
+
+% Includes the initial state and reuses each step's endpoint acceleration.
+velocity_verlet(acceleration, q0, v0, times, p) = (
+    _solve(acceleration, q0, v0, times, p, acceleration(times[1], q0, p))
+)

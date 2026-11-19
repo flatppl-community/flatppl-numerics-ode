@@ -1,0 +1,11 @@
+% # Exact affine evolution on a uniform grid
+flatppl_compat = "0.1"
+linalg = standard_module("ext-linear-algebra", "0.1")
+generator_row(i, A, b) = cat(A[i, :], [b[i]])
+generator(A, b) = rowstack(cat(generator_row.(indicesof(b), [A], [b]), [zeros(lengthof(b) + 1)]))
+transition(A, b, h) = linalg.matexp(h .* generator(A, b))
+advance(T, y) = (T * cat(y, [1.0]))[indicesof(y)]
+affine_step(A, b, y, h) = advance(transition(A, b, h), y)
+scan_step(y, i, T) = ifelse(i == 1, y, advance(T, y))
+solve(T, initial, steps) = scan(scan_step, initial, indicesof(zeros(steps + 1)), T)
+affine(A, b, initial, h, steps) = solve(transition(A, b, h), initial, steps)
