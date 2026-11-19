@@ -23,8 +23,9 @@ a start time, and a step size, and returns the next state vector.
 | [`affine`](#exact-affine-flow) | [`affine_step`](#exact-affine-flow) | Exact flow |
 | [`sdirk2_residual`](#sdirk2_residual) | — | — |
 
-These are fixed-grid methods, with no adaptive step selection, error estimate,
-events, or interpolation. Refine the grid to assess integration accuracy.
+These methods take fixed grids. Vern7 and Rodas4P2 offer opt-in
+[embedded error estimates](#embedded-error-estimates). Refine the grid to
+assess integration accuracy.
 Nominal orders need not hold on a coarse grid, near floating-point limits, or
 in stiff order-reduction regimes. The stiff methods target modest vector sizes.
 Finite differences use one extra RHS evaluation per state component. Dense
@@ -52,10 +53,8 @@ $t$, $t+h/2$, $t+h/2$, $t+h$ and weights are $1/6$, $1/3$, $1/3$, $1/6$.
 ## Vern7
 
 `vern7(f, initial, times, p)` and `vern7_step(f, t, y, h, p)` use the principal
-seventh-order Verner formula with nine RHS evaluations per step. The
-[coefficients](https://github.com/SciML/OrdinaryDiffEq.jl/blob/master/lib/OrdinaryDiffEqVerner/src/verner_tableaus.jl)
-are those of SciML's `Vern7` principal formula. The embedded estimator and
-adaptive controller are not used.
+seventh-order Verner formula with nine RHS evaluations per step. See the
+[principal and embedded coefficients](https://github.com/SciML/OrdinaryDiffEq.jl/blob/ee14b61c0e78cc6cbb732989b14e765df20b105f/lib/OrdinaryDiffEqVerner/src/verner_tableaus.jl).
 
 ## Rosenbrock23
 
@@ -139,6 +138,25 @@ The six stages share $I-h\gamma J$, with $\gamma=1/4$ and $J=\partial f/\partial
 evaluated at the start of the step. Supply the [analytic derivative functions](#analytic-derivatives).
 See the [coefficient table](https://github.com/SciML/OrdinaryDiffEq.jl/blob/ee14b61c0e78cc6cbb732989b14e765df20b105f/lib/OrdinaryDiffEqRosenbrockTableaus/src/rosenbrock_tableaus.jl).
 
+## Embedded error estimates
+
+| Trajectory | Single step |
+|---|---|
+| `vern7_with_error(f, initial, times, p)` | `vern7_step_with_error(f, t, y, h, p)` |
+| `rodas4p2_with_error(f, jac, dfdt, initial, times, p)` | `rodas4p2_step_with_error(f, jac, dfdt, t, y, h, p)` |
+
+Each returns `record(state, error)`. The state uses the principal formula.
+The signed error vector is the principal result minus the embedded result
+from the same starting state. A trajectory has one row per grid time.
+Its first state is the supplied initial vector and its first error is zero.
+For later rows, the error belongs to the interval ending at that row.
+
+Rodas4P2 returns the sixth stage increment, with no extra RHS evaluations or
+linear solves. Vern7 evaluates a tenth RHS stage for its estimate. The
+estimate measures a local state difference. To check accuracy across the
+trajectory or in a fitted model, refine the grid and compare the states,
+log density, and parameter gradients.
+
 ## Exact affine flow
 
 For $y'=Ay+b$ with constant $A\in\mathbb R^{d\times d}$ and $b\in\mathbb R^d$,
@@ -181,7 +199,7 @@ specific commit. Run the JavaScript checks with Node 24 or newer.
 
 ```sh
 export FLATPPL_JS_DIR=/path/to/flatppl-js
-for test in check orders affine rodas4p2 verlet; do
+for test in check orders affine rodas4p2 verlet vern7-error rodas4p2-error error-grid; do
     node "tests/$test.cjs" || exit
 done
 ```

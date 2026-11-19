@@ -12,7 +12,11 @@ See THIRD-PARTY-NOTICES.md for the upstream license.
 flatppl_compat = "0.1"
 
 rodas4p2_grid_step(f, t, y, h, args) = rodas4p2_step(f, args[1], args[2], t, y, h, args[3])
+rodas4p2_grid_step_with_error(f, t, y, h, args) = rodas4p2_step_with_error(f, args[1], args[2], t, y, h, args[3])
 rodas4p2_step(f, jac, dfdt, t, y, h, p) = _rodas4p2_first(
+    f, t, y, h, p, eye(lengthof(y)) .- (h / 4) .* jac(t, y, p), (h * h / 4) .* dfdt(t, y, p)
+).state
+rodas4p2_step_with_error(f, jac, dfdt, t, y, h, p) = _rodas4p2_first(
     f, t, y, h, p, eye(lengthof(y)) .- (h / 4) .* jac(t, y, p), (h * h / 4) .* dfdt(t, y, p)
 )
 _rodas4p2_first(f, t, y, h, p, M, dt) = _rodas4p2_second(
@@ -49,8 +53,9 @@ _rodas4p2_fifth_state(f, t, h, p, M, k1, k2, k3, k4, origin) = _rodas4p2_sixth(
 _rodas4p2_sixth(f, t, h, p, M, k1, k2, k3, k4, origin, k5) = _rodas4p2_finish(
     f, t, h, p, M, k1, k2, k3, k4, k5, origin .+ k5
 )
-_rodas4p2_finish(f, t, h, p, M, k1, k2, k3, k4, k5, stage) = stage .+ linsolve(
+_rodas4p2_result(stage, k6) = record(state = stage .+ k6, error = k6)
+_rodas4p2_finish(f, t, h, p, M, k1, k2, k3, k4, k5, stage) = _rodas4p2_result(stage, linsolve(
     M, (h / 4) .* f(t + h, stage, p) .+ (-4.408651676063871 / 4) .* k1
         .+ (-6.692003137674639 / 4) .* k2 .+ (24.625568527593117 / 4) .* k3
         .+ (16.627521966636085 / 4) .* k4 .+ (-5.714285714285718 / 4) .* k5
-)
+))

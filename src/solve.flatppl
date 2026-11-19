@@ -2,3 +2,16 @@
 flatppl_compat = "0.1"
 step_state(state, next_time, args) = record(y = args[2](args[1], state.t, state.y, next_time - state.t, args[3]), t = next_time)
 solve(step, f, initial, times, p) = scan(step_state, record(y = initial, t = times[1]), times, (f, step, p)).y
+
+_error_step(state, next_time, args) = _error_state(
+    args[2](args[1], state.t, state.y, next_time - state.t, args[3]), next_time
+)
+_error_state(result, t) = record(y = result.state, error = result.error, t = t)
+_with_initial(initial, states) = record(
+    state = cat([initial], states.y),
+    error = cat([0.0 .* initial], states.error)
+)
+solve_with_error(step, f, initial, times, p) = _with_initial(
+    initial, scan(_error_step, record(y = initial, error = 0.0 .* initial, t = times[1]),
+        times[1 .+ indicesof(zeros(lengthof(times) - 1))], (f, step, p))
+)
