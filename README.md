@@ -15,6 +15,8 @@ Solvers integrate $dy/dt=f(t,y,p)$. For a state of length $d$ and a time grid of
 
 The stiff solvers accept [analytic derivative functions](docs/reference.md#analytic-derivatives). Rodas4P2 gives fourth-order stiff integration. The [affine solver](docs/reference.md#exact-affine-flow) propagates $y'=Ay+b$ by matrix exponential. [Velocity Verlet](docs/reference.md#velocity-verlet) handles separable mechanical systems.
 
+Vern7 and Rodas4P2 offer [embedded error estimates](docs/reference.md#embedded-error-estimates) for checking a fixed grid.
+
 The [decay example](examples/playground.flatppl) infers a rate from noisy measurements.
 
 [Third-party notices](THIRD-PARTY-NOTICES.md)

@@ -1,4 +1,4 @@
-The Rodas4P2 coefficients and stage convention are from OrdinaryDiffEq.jl.
+The Rodas4P2 tableau and stage convention and the Vern7 coefficients come from OrdinaryDiffEq.jl.
 
 https://github.com/SciML/OrdinaryDiffEq.jl/tree/ee14b61c0e78cc6cbb732989b14e765df20b105f
 
